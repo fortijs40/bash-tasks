@@ -3,9 +3,7 @@
 city=$1
 date=$2
 
-echo $city
-echo $date
-api_key="xxxxxxxxx"
+api_key="exxxxxxxxxxxxxxxxxxxx"
 api_link="api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&lang=la&appid=${api_key}"
 
 response=$(curl -s $api_link)
@@ -13,6 +11,8 @@ if [ "$(echo "$response" | jq -r '.message')" = "city not found" ]; then
     echo "Šāda pilsēta netika atrasta"
     exit
 fi
+
+avg_temp=$(echo "$response" | jq -r  '.list[] | select(.dt_txt | startswith("'$date'")) | .main.temp' | awk '{ sum+= $1 } END { if (NR > 0) printf("%.0f\n", sum / NR) }')
 
 response=$(echo "$response" |\
 jq -r '.list[] | "\(.dt_txt)\t Temp: \(.main.temp)°C\t Prognoze: \(.weather[].description)\t Ieteikums: \(
@@ -42,3 +42,10 @@ if [ -z "$response" ]; then
     exit
 fi
 echo "$response"
+
+wiki_response=$(curl -s "https://lv.wikipedia.org/w/index.php?title=${avg_temp}._Saeima" | grep "Darbības laiks")
+if [ -z "$wiki_response" ]; then
+    echo "Neeksistē ${avg_temp}.Saeimas lapa"
+else
+    echo "Eksistē ${avg_temp}.Saeimas lapa"
+fi
